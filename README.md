@@ -1,2 +1,2 @@
 # cuSolver
-CUDA based solver for Hamiltonians
+GPU-based solver for fast numerical solving of open quantum dynamics
