@@ -27,6 +27,7 @@
         std::exit(EXIT_FAILURE);                            \
 	}							                            \
     } while(0)
+    
 #define CUDA_ALLOC(p, sz)			                        \
     CUDA_CALL(cudaMalloc((void **)&(p), (sz)));	            \
     if ((p) == nullptr) {			                        \
@@ -252,7 +253,9 @@ public:
 
     /// Set the current vector to all ones
     static void oneVec(int32_t size, DeviceMatrix &v) {
-        CUDA_CALL(cudaMemset(v.devPtr, 1, size * sizeof(cuDoubleComplex)));
+        std::vector<cuDoubleComplex> ones (size, {1, 0});
+        HostMatrix onesHost(ones, size, 1);
+        v = onesHost;
     }
 
     /// Copies device vector v1 into device vector v0
@@ -330,9 +333,9 @@ public:
     /// Computes the trace of the matrix
     static cuDoubleComplex matTr(const DeviceMatrix &mat){
         DeviceMatrix ones {mat.rows(), mat.cols()};
-        oneVec(ones.datasize(), ones);
+        oneVec(mat.rows() * mat.cols(), ones);
         cuDoubleComplex res;
-        CUBLAS_CALL(cublas_dotc(ones.datasize(), res, mat.devPtr, ones.devPtr,
+        CUBLAS_CALL(cublas_dotc(mat.cols(), res, mat.devPtr, ones.devPtr,
                                 mat.cols() + 1, 0));
         return res;
     }
@@ -341,16 +344,8 @@ public:
     static void hermitian(DeviceMatrix& v0, const DeviceMatrix& v1) {
         assert(v0.rows() == v1.cols());
         assert(v0.cols() == v1.rows());
-        CUBLAS_CALL(cublas_geam(v0.rows(), v0.cols(), v0.devPtr, {1, 0},
+        CUBLAS_CALL(cublas_geam(v0.rows(), v0.cols(), v0.devPtr, {0, 0},
                                 v0.devPtr, v1.devPtr, {1, 0}, false, true));
-    }
-
-    /// Computes the transpose the the matrix
-    static void transpose(DeviceMatrix& res, const DeviceMatrix& mat) {
-        assert(res.rows() == mat.cols());
-        assert(res.cols() == mat.rows());
-        CUBLAS_CALL(cublas_geam(res.rows(), mat.cols(), res.devPtr, {1, 0},
-                                res.devPtr, mat.devPtr, {0, 0}, true, false));
     }
 
     /// GPU context, keeps track of the cuBLAS handle.
