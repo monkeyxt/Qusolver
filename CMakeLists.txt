@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.19)
 project(cuSolver)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -11,3 +11,6 @@ add_executable(cuSolver
         src/rk4.hpp
         src/operators.hpp
         src/solver.cpp)
+
+find_package(CUDA REQUIRED)
+target_link_libraries(cuSolver PRIVATE cudart cuda cublas)
