@@ -106,6 +106,9 @@ public:
     template<typename System>
     void do_step(System &system, state_type &x, time_type t, time_type dt) {
         adjust_size(x);
+
+        /// We assume here that we are always dealing with complex type
+        /// Will change to more generic form in later iterations
         const value_type one = {1.0, 0};
         const time_type dt2 = dt / 2, dt3 = dt/3, dt6 = dt / 6;
         typedef typename operations::template scale_sum2<
@@ -113,13 +116,13 @@ public:
         typedef typename operations::template scale_sum5<
             value_type, time_type, time_type,
             time_type, time_type> scale_sum5;
-        system(x, k1, t);
+        system(x, k1, t, dt);
         algebra::for_each3(x_tmp, x, k1, scale_sum2(one, dt2));
-        system(x_tmp, k2, t + dt2);
+        system(x_tmp, k2, t + dt2, dt2);
         algebra::for_each3(x_tmp, x, k2, scale_sum2(one, dt2));
-        system(x_tmp, k3, t + dt2);
+        system(x_tmp, k3, t + dt, dt);
         algebra::for_each3(x_tmp, x, k3, scale_sum2(one, dt));
-        system(x_tmp, k4, t + dt);
+        system(x_tmp, k4, t + dt, dt);
         algebra::for_each6(x, x, k1, k2, k3, k4,
                            scale_sum5(one, dt6, dt3, dt3, dt6));
     }    
@@ -134,4 +137,3 @@ private:
         resize(x, k4);
     }
 };
-
