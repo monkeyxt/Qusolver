@@ -1,16 +1,18 @@
 cmake_minimum_required(VERSION 3.19)
-project(cuSolver)
+project(qusolver)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 include_directories(src)
 
-add_executable(cuSolver
+add_executable(qusolver
         src/gpu.hpp
         src/lindblad.hpp
         src/rk4.hpp
         src/operators.hpp
-        src/solver.cpp)
+        src/types.hpp
+        src/qusolver.hpp
+        solver.cpp)
 
 find_package(CUDA REQUIRED)
-target_link_libraries(cuSolver PRIVATE cudart cuda cublas)
+target_link_libraries(qusolver PRIVATE cudart cuda cublas)
