@@ -63,8 +63,7 @@ template <ScalarType T>
 struct BLASType;
 
 template <>
-struct BLASType<float>
-{
+struct BLASType<float> {
     static constexpr auto cublas_axpy = cublasCaxpy;
     static constexpr auto cublas_scal = cublasSscal;
     static constexpr auto cublas_cscal = cublasCscal;
@@ -75,8 +74,7 @@ struct BLASType<float>
 };
 
 template <>
-struct BLASType<double>
-{
+struct BLASType<double> {
     static constexpr auto cublas_axpy = cublasZaxpy;
     static constexpr auto cublas_scal = cublasDscal;
     static constexpr auto cublas_cscal = cublasZscal;
@@ -90,70 +88,57 @@ struct BLASType<double>
  * Class definition for `GPUSolver`. This class is a wrapper around cuBLAS
  * calls and keeps track of the current cuBLAS context.
  ******************************************************************************/
-class GPUSolver
-{
+class GPUSolver {
 public:
     /// Implementation of DeviceMatrix
     template <ScalarType T = DefaultPrecisionType>
-    class DeviceMatrix
-    {
+    class DeviceMatrix {
     public:
         using Matrix = HostMatrix<T>;
         DeviceMatrix() : rowdim{}, coldim{}, devPtr{} {}
         ~DeviceMatrix() { release(); }
 
-        DeviceMatrix(std::size_t rowdim, std::size_t coldim)
-        {
+        DeviceMatrix(std::size_t rowdim, std::size_t coldim) {
             allocate(rowdim, coldim);
         }
-        DeviceMatrix(const DeviceMatrix &m) : DeviceMatrix(m.rowdim, m.coldim)
-        {
+        DeviceMatrix(const DeviceMatrix &m) : DeviceMatrix(m.rowdim, m.coldim) {
             *this = m;
         }
         DeviceMatrix(DeviceMatrix &&m) noexcept : rowdim{m.rowdim},
                                                   coldim{m.coldim},
-                                                  devPtr{m.devPtr}
-        {
+                                                  devPtr{m.devPtr} {
             m.rowdim = 0;
             m.coldim = 0;
             m.devPtr = nullptr;
         }
 
-        DeviceMatrix(const Matrix &m) : DeviceMatrix(m.rows(), m.cols())
-        {
+        DeviceMatrix(const Matrix &m) : DeviceMatrix(m.rows(), m.cols()) {
             *this = m;
         }
 
-        DeviceMatrix &operator=(const Matrix &m)
-        {
+        DeviceMatrix &operator=(const Matrix &m) {
             resize(m.rows(), m.cols());
-            if (datasize())
-            {
+            if (datasize()) {
                 CUDA_CALL(cudaMemcpy(devPtr, m.data(), datasize(),
                                      cudaMemcpyHostToDevice));
             }
             return *this;
         }
 
-        DeviceMatrix &operator=(const DeviceMatrix &m)
-        {
-            if (this == &m)
-            {
+        DeviceMatrix &operator=(const DeviceMatrix &m) {
+            if (this == &m) {
                 return *this;
             }
             resize(m.rowdim, m.coldim);
-            if (datasize())
-            {
+            if (datasize()) {
                 CUDA_CALL(cudaMemcpy(devPtr, m.devPtr, datasize(),
                                      cudaMemcpyDeviceToDevice));
             }
             return *this;
         }
 
-        DeviceMatrix &operator=(DeviceMatrix &&rhs) noexcept
-        {
-            if (this == &rhs)
-            {
+        DeviceMatrix &operator=(DeviceMatrix &&rhs) noexcept {
+            if (this == &rhs) {
                 return *this;
             }
             std::swap(rowdim, rhs.rowdim);
@@ -162,47 +147,38 @@ public:
             return *this;
         }
 
-        cuDoubleComplex operator()(std::size_t rowIdx,
-                                   std::size_t colIdx) const
-        {
-            cuDoubleComplex res;
-            if (!(rowIdx < rowdim && colIdx < coldim))
-            {
+        CudaComplexType<T> operator()(std::size_t rowIdx,
+                                   std::size_t colIdx) const {
+            CudaComplexType<T> res;
+            if (!(rowIdx < rowdim && colIdx < coldim)) {
                 throw std::exception();
             }
             CUDA_CALL(cudaMemcpy(&res, devPtr + colIdx * rowdim + rowIdx,
-                                 sizeof(cuDoubleComplex),
+                                 sizeof(CudaComplexType<T>),
                                  cudaMemcpyDeviceToHost));
             return res;
         }
 
-        void resize(std::size_t newRowdim, std::size_t newColdim)
-        {
-            if ((rowdim != newRowdim) || coldim != (newColdim))
-            {
+        void resize(std::size_t newRowdim, std::size_t newColdim) {
+            if ((rowdim != newRowdim) || coldim != (newColdim)) {
                 release();
                 allocate(newRowdim, newColdim);
             }
         }
 
-        void allocate(std::size_t newRowdim, std::size_t newColdim)
-        {
+        void allocate(std::size_t newRowdim, std::size_t newColdim) {
             rowdim = newRowdim;
             coldim = newColdim;
-            if (datasize())
-            {
+            if (datasize()) {
                 CUDA_ALLOC(devPtr, datasize());
             }
-            else
-            {
+            else {
                 devPtr = nullptr;
             }
         }
 
-        void release()
-        {
-            if (devPtr)
-            {
+        void release() {
+            if (devPtr) {
                 cudaFree(devPtr);
             }
             devPtr = nullptr;
@@ -212,12 +188,9 @@ public:
 
         /// Handy print overload
         friend std::ostream &operator<<(std::ostream &stream,
-                                        const DeviceMatrix &matrix)
-        {
-            for (int i = 0; i < matrix.rowdim; i++)
-            {
-                for (int j = 0; j < matrix.coldim; j++)
-                {
+                                        const DeviceMatrix &matrix) {
+            for (std::size_t i = 0; i < matrix.rowdim; i++) {
+                for (std::size_t j = 0; j < matrix.coldim; j++) {
                     CudaComplexType<T> ele = matrix(i, j);
                     std::cout << ele << " ";
                 }
@@ -226,77 +199,63 @@ public:
             return stream;
         }
 
-        DeviceMatrix operator*(const DeviceMatrix &other) const
-        {
-            if (coldim != other.rowdim)
-            {
-                /// Throw exception here
+        DeviceMatrix operator*(const DeviceMatrix &other) const {
+            if (coldim != other.rowdim) {
+                throw std::invalid_argument( "Matrix index out of bounds!" );
             }
             DeviceMatrix res(rowdim, other.coldim);
             matMul(res, *this, other);
             return res;
         }
 
-        DeviceMatrix operator*=(const CudaComplexType<T> s) const
-        {
+        DeviceMatrix operator*=(const CudaComplexType<T> s) const {
             scaleVec(*this, s);
             return *this;
         }
 
-        DeviceMatrix operator*(const CudaComplexType<T> s) const
-        {
+        DeviceMatrix operator*(const CudaComplexType<T> s) const {
             scaleVec(*this, s);
             return *this;
         }
 
-        DeviceMatrix operator*=(const T s) const
-        {
+        DeviceMatrix operator*=(const T s) const {
             scaleVec(*this, s);
             return *this;
         }
 
-        DeviceMatrix operator*(const T s) const
-        {
+        DeviceMatrix operator*(const T s) const {
             scaleVec(*this, s);
             return *this;
         }
 
-        DeviceMatrix operator+=(const DeviceMatrix &other) const
-        {
-            if (coldim != other.coldim || rowdim != other.rowdim)
-            {
-                /// Throw exception here
+        DeviceMatrix operator+=(const DeviceMatrix &other) const {
+            if (coldim != other.coldim || rowdim != other.rowdim) {
+                throw std::invalid_argument( "Matrix index out of bounds!" );
             }
             addVec(*this, other);
             return *this;
         }
 
-        DeviceMatrix operator+(const DeviceMatrix &other) const
-        {
-            if (coldim != other.coldim || rowdim != other.rowdim)
-            {
-                /// Throw exception here
+        DeviceMatrix operator+(const DeviceMatrix &other) const {
+            if (coldim != other.coldim || rowdim != other.rowdim) {
+                throw std::invalid_argument( "Matrix index out of bounds!" );
             }
             DeviceMatrix res(rowdim, coldim);
             addVec(res, *this, other);
             return res;
         }
 
-        DeviceMatrix operator-=(const DeviceMatrix &other) const
-        {
-            if (coldim != other.coldim || rowdim != other.rowdim)
-            {
-                /// Throw exception here
+        DeviceMatrix operator-=(const DeviceMatrix &other) const {
+            if (coldim != other.coldim || rowdim != other.rowdim) {
+                throw std::invalid_argument( "Matrix index out of bounds!" );
             }
             subVec(*this, other);
             return *this;
         }
 
-        DeviceMatrix operator-(const DeviceMatrix &other) const
-        {
-            if (coldim != other.coldim || rowdim != other.rowdim)
-            {
-                /// Throw exception here
+        DeviceMatrix operator-(const DeviceMatrix &other) const {
+            if (coldim != other.coldim || rowdim != other.rowdim) {
+                throw std::invalid_argument( "Matrix index out of bounds!" );
             }
             DeviceMatrix res(rowdim, coldim);
             subVec(res, *this, other);
@@ -306,8 +265,7 @@ public:
         [[nodiscard]] std::size_t rows() const { return rowdim; }
         [[nodiscard]] std::size_t cols() const { return coldim; }
         [[nodiscard]] std::size_t size() const { return rowdim * coldim; }
-        [[nodiscard]] std::size_t datasize() const
-        {
+        [[nodiscard]] std::size_t datasize() const {
             return rowdim * coldim * sizeof(CudaComplexType<T>);
         }
 
@@ -329,15 +287,13 @@ public:
 
     /// Sets the current vector to all zeros
     template <ScalarType T>
-    static void zeroVec(int32_t size, DeviceMatrix<T> &v)
-    {
+    static void zeroVec(int32_t size, DeviceMatrix<T> &v) {
         CUDA_CALL(cudaMemset(v.devPtr, 0, size * sizeof(CudaComplexType<T>)));
     }
 
     /// Set the current vector to all ones
     template <ScalarType T>
-    static void oneVec(int32_t size, DeviceMatrix<T> &v)
-    {
+    static void oneVec(int32_t size, DeviceMatrix<T> &v) {
         std::vector<CudaComplexType<T>> ones(size, {1, 0});
         HostMatrix onesHost(ones, size, 1);
         v = onesHost;
@@ -346,8 +302,7 @@ public:
     /// Copies device vector v1 into device vector v0
     template <ScalarType T>
     static void copyVec(int32_t size, DeviceMatrix<T> &v0,
-                        const DeviceMatrix<T> &v1)
-    {
+                        const DeviceMatrix<T> &v1) {
         CUDA_CALL(cudaMemcpy(v0.devPtr, v1.devPtr,
                              size * sizeof(CudaComplexType<T>),
                              cudaMemcpyDeviceToDevice));
@@ -355,8 +310,7 @@ public:
 
     /// Computes the addition of two device matrices
     template <ScalarType T>
-    static void addVec(const DeviceMatrix<T> &v0, const DeviceMatrix<T> &v1)
-    {
+    static void addVec(const DeviceMatrix<T> &v0, const DeviceMatrix<T> &v1) {
         assert(v0.rows() == v1.rows());
         assert(v0.cols() == v1.cols());
         CUBLAS_CALL(cublas_geam<T>(v0.rows(), v0.cols(), v0.devPtr, {1, 0},
@@ -365,8 +319,7 @@ public:
 
     /// Computes the subtraction of two device matrices
     template <ScalarType T>
-    static void subVec(const DeviceMatrix<T> &v0, const DeviceMatrix<T> &v1)
-    {
+    static void subVec(const DeviceMatrix<T> &v0, const DeviceMatrix<T> &v1) {
         assert(v0.rows() == v1.rows());
         assert(v0.cols() == v1.cols());
         CUBLAS_CALL(cublas_geam<T>(v0.rows(), v0.cols(), v0.devPtr, {1, 0},
@@ -377,8 +330,7 @@ public:
     template <ScalarType T>
     static void addVec(DeviceMatrix<T> &res,
                        const DeviceMatrix<T> &v0,
-                       const DeviceMatrix<T> &v1)
-    {
+                       const DeviceMatrix<T> &v1) {
         assert(res.rows() == v0.rows());
         assert(res.cols() == v0.cols());
         assert(v0.rows() == v1.rows());
@@ -391,8 +343,7 @@ public:
     template <ScalarType T>
     static void subVec(DeviceMatrix<T> &res,
                        const DeviceMatrix<T> &v0,
-                       const DeviceMatrix<T> &v1)
-    {
+                       const DeviceMatrix<T> &v1) {
         assert(res.rows() == v0.rows());
         assert(res.cols() == v0.cols());
         assert(v0.rows() == v1.rows());
@@ -403,23 +354,20 @@ public:
 
     /// Computes v *= s where s is a complex scalar
     template <ScalarType T>
-    static void scaleVec(const DeviceMatrix<T> &v, CudaComplexType<T> s)
-    {
+    static void scaleVec(const DeviceMatrix<T> &v, CudaComplexType<T> s) {
         CUBLAS_CALL(cublas_scal<T>(v.rowdim * v.coldim, s, v.devPtr));
     }
 
     /// Computes v *= s where s is a real scalar
     template <ScalarType T>
-    static void scaleVec(const DeviceMatrix<T> &v, T s)
-    {
+    static void scaleVec(const DeviceMatrix<T> &v, T s) {
         CUBLAS_CALL(cublas_scal<T>(v.rowdim * v.coldim, {s, 0}, v.devPtr));
     }
 
     /// Computes the matrix multiplication res = mat0 * mat1
     template <ScalarType T>
     static void matMul(DeviceMatrix<T> &res, const DeviceMatrix<T> &mat0,
-                       const DeviceMatrix<T> &mat1)
-    {
+                       const DeviceMatrix<T> &mat1) {
         assert(res.rows() == mat0.rows());
         assert(mat0.cols() == mat1.rows());
         assert(mat1.cols() == res.cols());
@@ -430,8 +378,7 @@ public:
 
     /// Computes the trace of the matrix
     template <ScalarType T>
-    static cuDoubleComplex matTr(const DeviceMatrix<T> &mat)
-    {
+    static cuDoubleComplex matTr(const DeviceMatrix<T> &mat) {
         DeviceMatrix ones{mat.rows(), mat.cols()};
         oneVec(mat.rows() * mat.cols(), ones);
         cuDoubleComplex res;
@@ -442,8 +389,7 @@ public:
 
     /// Computes the complex transpose the the matrix
     template <ScalarType T>
-    static void hermitian(DeviceMatrix<T> &v0, const DeviceMatrix<T> &v1)
-    {
+    static void hermitian(DeviceMatrix<T> &v0, const DeviceMatrix<T> &v1) {
         assert(v0.rows() == v1.cols());
         assert(v0.cols() == v1.rows());
         CUBLAS_CALL(cublas_geam<T>(v0.rows(), v0.cols(), v0.devPtr, {0, 0},
@@ -451,10 +397,8 @@ public:
     }
 
     /// GPU context, keeps track of the cuBLAS handle.
-    struct GPUContext
-    {
-        GPUContext()
-        {
+    struct GPUContext {
+        GPUContext() {
             CUBLAS_CALL(cublasCreate(&handle));
         }
         ~GPUContext() = default;
@@ -475,8 +419,7 @@ private:
                                       const CudaComplexPtr<T> B,
                                       const CudaComplexType<T> beta,
                                       bool adjointA = false,
-                                      bool adjointB = false)
-    {
+                                      bool adjointB = false) {
         return BLASType<T>::cublas_gemm(context.handle,
                                         adjointA ? CUBLAS_OP_C : CUBLAS_OP_N,
                                         adjointB ? CUBLAS_OP_C : CUBLAS_OP_N,
@@ -496,8 +439,7 @@ private:
     template <ScalarType T>
     static cublasStatus_t cublas_axpy(std::size_t dim, CudaComplexType<T> s,
                                       const CudaComplexType<T> *x,
-                                      CudaComplexType<T> *y)
-    {
+                                      CudaComplexType<T> *y) {
         return BLASType<T>::cublas_axpy(context.handle, dim,
                                         static_cast<CudaComplexConstPtr<T>>(&s),
                                         static_cast<CudaComplexConstPtr<T>>(x), 1,
@@ -507,8 +449,7 @@ private:
     /// cuBLAS scaling handle
     template <ScalarType T>
     static cublasStatus_t cublas_scal(std::size_t dim, CudaComplexType<T> s,
-                                      CudaComplexType<T> *x)
-    {
+                                      CudaComplexType<T> *x) {
         return BLASType<T>::cublas_cscal(context.handle, dim,
                                          static_cast<CudaComplexConstPtr<T>>(&s),
                                          static_cast<CudaComplexPtr<T>>(x), 1);
@@ -523,8 +464,7 @@ private:
                                       const CudaComplexType<T> *B,
                                       const CudaComplexType<T> beta,
                                       bool adjointA = false,
-                                      bool adjointB = false)
-    {
+                                      bool adjointB = false) {
         return BLASType<T>::cublas_geam(context.handle,
                                         adjointA ? CUBLAS_OP_C : CUBLAS_OP_N,
                                         adjointB ? CUBLAS_OP_C : CUBLAS_OP_N,
@@ -547,8 +487,7 @@ private:
                                       const CudaComplexType<T> *x,
                                       const CudaComplexType<T> *y,
                                       int incx,
-                                      int incy)
-    {
+                                      int incy) {
         return BLASType<T>::cublas_dotc(context.handle, n,
                                         static_cast<CudaComplexConstPtr<T>>(x),
                                         incx,
