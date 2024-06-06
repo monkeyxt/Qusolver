@@ -14,4 +14,9 @@ libcublas
 cmake .
 make
 ```
-Note: this initial version only takes in hardcoded parameters
+
+## Feature List
+
+- Introduce `pybind` for easy encoding of parameters
+- Add more sovlers (e.g. Krylov subspace)
+ 
