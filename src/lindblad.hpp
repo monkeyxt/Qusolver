@@ -22,6 +22,7 @@ class Lindblad {
 public:
     using StateType = GPUSolver::DeviceMatrix<T>;
     using Matrix = GPUSolver::DeviceMatrix<T>;
+    using ComplexType = CudaComplex<T>::Type;
 
     /// Constructors
     Lindblad(const HostMatrix<T>& _hamiltonian,

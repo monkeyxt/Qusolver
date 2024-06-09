@@ -67,10 +67,10 @@ RM = /home/txia23/anaconda3/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/txia23/Desktop/solver/qusolver
+CMAKE_SOURCE_DIR = /home/txia23/Codes/qusolver
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/txia23/Desktop/solver/qusolver
+CMAKE_BINARY_DIR = /home/txia23/Codes/qusolver
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -99,9 +99,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/txia23/Desktop/solver/qusolver/CMakeFiles /home/txia23/Desktop/solver/qusolver//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/txia23/Codes/qusolver/CMakeFiles /home/txia23/Codes/qusolver//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/txia23/Desktop/solver/qusolver/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/txia23/Codes/qusolver/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -142,32 +142,32 @@ qusolver/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/qusolver.dir/build.make CMakeFiles/qusolver.dir/build
 .PHONY : qusolver/fast
 
-solver.o: solver.cpp.o
+src/pybind_solver.o: src/pybind_solver.cpp.o
 
-.PHONY : solver.o
+.PHONY : src/pybind_solver.o
 
 # target to build an object file
-solver.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/qusolver.dir/build.make CMakeFiles/qusolver.dir/solver.cpp.o
-.PHONY : solver.cpp.o
+src/pybind_solver.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/qusolver.dir/build.make CMakeFiles/qusolver.dir/src/pybind_solver.cpp.o
+.PHONY : src/pybind_solver.cpp.o
 
-solver.i: solver.cpp.i
+src/pybind_solver.i: src/pybind_solver.cpp.i
 
-.PHONY : solver.i
+.PHONY : src/pybind_solver.i
 
 # target to preprocess a source file
-solver.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/qusolver.dir/build.make CMakeFiles/qusolver.dir/solver.cpp.i
-.PHONY : solver.cpp.i
+src/pybind_solver.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/qusolver.dir/build.make CMakeFiles/qusolver.dir/src/pybind_solver.cpp.i
+.PHONY : src/pybind_solver.cpp.i
 
-solver.s: solver.cpp.s
+src/pybind_solver.s: src/pybind_solver.cpp.s
 
-.PHONY : solver.s
+.PHONY : src/pybind_solver.s
 
 # target to generate assembly for a file
-solver.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/qusolver.dir/build.make CMakeFiles/qusolver.dir/solver.cpp.s
-.PHONY : solver.cpp.s
+src/pybind_solver.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/qusolver.dir/build.make CMakeFiles/qusolver.dir/src/pybind_solver.cpp.s
+.PHONY : src/pybind_solver.cpp.s
 
 # Help Target
 help:
@@ -178,9 +178,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... qusolver"
-	@echo "... solver.o"
-	@echo "... solver.i"
-	@echo "... solver.s"
+	@echo "... src/pybind_solver.o"
+	@echo "... src/pybind_solver.i"
+	@echo "... src/pybind_solver.s"
 .PHONY : help
 
 

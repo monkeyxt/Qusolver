@@ -26,13 +26,28 @@ public:
     HostMatrix(std::vector<CudaComplexType<T>>& m,
                std::size_t _rowdim,
                std::size_t _coldim)
-               : mat(m), rowdim(_rowdim), coldim(_coldim) {}
+               : mat(m), rowdim(_rowdim), coldim(_coldim), 
+                 itemSz(_rowdim * _coldim) {}
 
     HostMatrix(std::vector<CudaComplexType<T>>&& m,
                std::size_t _rowdim,
                std::size_t _coldim)
-               : mat(m), rowdim(_rowdim), coldim(_coldim) {}
+               : mat(m), rowdim(_rowdim), coldim(_coldim),
+                 itemSz(_rowdim * _coldim) {}
 
+    /// Interface with pybind, converting from numpy buffer to our matrix type
+    /// Probably not the most efficient, going to be optimized away.
+    HostMatrix(std::vector<std::complex<T>>* ptr,
+               std::size_t _rowdim,
+               std::size_t _coldim)
+               : rowdim(_rowdim), coldim(_coldim), itemSz(_rowdim * _coldim) {
+                   mat.resize(itemSz);
+                   for (std::size_t i = 0; i < itemSz; i++) {
+                       mat.push_back({reinterpret_cast<T(&)[2]>(ptr[i])[0], 
+                                      reinterpret_cast<T(&)[2]>(ptr[i])[0]});
+                   }
+               }
+               
     [[nodiscard]] std::size_t rows() const { return rowdim; }
     [[nodiscard]] std::size_t cols() const { return coldim; }
     [[nodiscard]] std::size_t size() const { return rowdim * coldim; }
@@ -63,4 +78,5 @@ private:
     std::vector<CudaComplexType<T>> mat;
     std::size_t rowdim;
     std::size_t coldim;
+    std::size_t itemSz;
 };

@@ -12,10 +12,8 @@
 #include <complex>
 #include <cuComplex.h>  /// for cuComplex, cuDoubleComplex
 
-
 #ifndef TYPES_H
 #define TYPES_H
-
 
 using DefaultPrecisionType = double;
 

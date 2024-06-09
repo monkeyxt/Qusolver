@@ -295,7 +295,7 @@ public:
     template <ScalarType T>
     static void oneVec(int32_t size, DeviceMatrix<T> &v) {
         std::vector<CudaComplexType<T>> ones(size, {1, 0});
-        HostMatrix onesHost(ones, size, 1);
+        HostMatrix<T> onesHost(ones, size, 1);
         v = onesHost;
     }
 
@@ -378,10 +378,10 @@ public:
 
     /// Computes the trace of the matrix
     template <ScalarType T>
-    static cuDoubleComplex matTr(const DeviceMatrix<T> &mat) {
-        DeviceMatrix ones{mat.rows(), mat.cols()};
+    static CudaComplexType<T> matTr(const DeviceMatrix<T> &mat) {
+        DeviceMatrix<T> ones{mat.rows(), mat.cols()};
         oneVec(mat.rows() * mat.cols(), ones);
-        cuDoubleComplex res;
+        CudaComplexType<T> res;
         CUBLAS_CALL(cublas_dotc<T>(mat.cols(), res, mat.devPtr, ones.devPtr,
                                    mat.cols() + 1, 0));
         return res;

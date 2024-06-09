@@ -37,6 +37,7 @@
 /CMakeFiles/
 cmake_install.cmake
 CMakeCache.txt
+/_deps/
 
 # vscode files
 /.vscode/
